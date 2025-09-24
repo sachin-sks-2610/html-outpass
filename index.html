@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Outpass & Mentor Dashboard</title>
+  <style>
+    
+    body {
+      background-color: black;
+      font-family: Arial, sans-serif;
+      background: #f8f9fa;
+      margin: 0;
+      padding: 0;
+      color: #333;
+    }
+    header {
+      background: #4a69bd;
+      color: white;
+      padding: 1rem;
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+    nav {
+      display: flex;
+      justify-content: center;
+      background: #f1f2f6;
+      padding: 0.5rem;
+      gap: 1rem;
+    }
+    nav button {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 8px;
+      background: #4a69bd;
+      color: white;
+      cursor: pointer;
+      font-weight: 500;
+      transition: 0.3s;
+    }
+    nav button:hover { background: #1e3799; }
+    .container { padding: 2rem; max-width: 900px; margin: auto; }
+    .card {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      margin-bottom: 2rem;
+    }
+    .hidden { display: none; }
+    label { display: block; margin-top: 1rem; font-weight: 500; }
+    input, select, textarea {
+      width: 100%;
+      padding: 0.6rem;
+      margin-top: 0.3rem;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    button.primary {
+      background: #38ada9;
+      color: white;
+      border: none;
+      margin-top: 1.5rem;
+      padding: 0.7rem 1.5rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    button.primary:hover { background: #079992; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    th, td { padding: 0.75rem; border-bottom: 1px solid #ddd; text-align: left; }
+    tr:hover { background: #f1f2f6; }
+    .status-approved { color: green; font-weight: bold; }
+    .status-declined { color: red; font-weight: bold; }
+    .login-box {
+      max-width: 400px;
+      margin: 5rem auto;
+      background: white;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+  <header>Student Outpass System</header>
+  <nav>
+    <button onclick="showSection('student')">Student Request</button>
+    <button onclick="showLogin()">Mentor Dashboard</button>
+  </nav>
+
+  <div class="container">
+    <!-- Student Section -->
+    <div id="student" class="card">
+      <h2>Outpass / Homepass Request Form</h2>
+      <form id="requestForm">
+        <label>Name<input type="text" id="name" required></label>
+        <label>Year<input type="text" id="year" required></label>
+        <label>Department<input type="text" id="dept" required></label>
+        <label>Section<input type="text" id="section" required></label>
+        <label>Pass Type
+          <select id="passType" required>
+            <option value="Outpass">Outpass</option>
+            <option value="Homepass">Homepass</option>
+          </select>
+        </label>
+        <label>Departure Date & Time<input type="datetime-local" id="departure" required></label>
+        <label>Return Date & Time<input type="datetime-local" id="returning" required></label>
+        <label>Reason<textarea id="reason" required></textarea></label>
+        <button type="submit" class="primary">Submit Request</button>
+      </form>
+    </div>
+
+    <!-- Login Section -->
+    <div id="login" class="card hidden">
+      <h2>Mentor Login</h2>
+      <div class="login-box">
+        <label>User ID<input type="text" id="mentorUser" required></label>
+        <label>Password<input type="password" id="mentorPass" required></label>
+        <button class="primary" onclick="mentorLogin()">Login</button>
+        <p id="loginError" style="color:red; display:none;">Invalid credentials!</p>
+      </div>
+    </div>
+
+    <!-- Mentor Section -->
+    <div id="mentor" class="card hidden">
+      <h2>Mentor Dashboard</h2>
+      <table id="requestsTable">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Dept</th>
+            <th>Type</th>
+            <th>Departure</th>
+            <th>Return</th>
+            <th>Reason</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const mentorCredentials = { user: "mentor01", pass: "12345" };
+
+    function showSection(sectionId) {
+      document.getElementById('student').classList.add('hidden');
+      document.getElementById('mentor').classList.add('hidden');
+      document.getElementById('login').classList.add('hidden');
+      document.getElementById(sectionId).classList.remove('hidden');
+    }
+
+    function showLogin() {
+      showSection('login');
+    }
+
+    function mentorLogin() {
+      const user = document.getElementById('mentorUser').value;
+      const pass = document.getElementById('mentorPass').value;
+      if (user === mentorCredentials.user && pass === mentorCredentials.pass) {
+        showSection('mentor');
+        loadRequests();
+      } else {
+        document.getElementById('loginError').style.display = 'block';
+      }
+    }
+
+    const requestForm = document.getElementById('requestForm');
+    const requests = JSON.parse(localStorage.getItem('requests') || '[]');
+
+    requestForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const req = {
+        name: document.getElementById('name').value,
+        year: document.getElementById('year').value,
+        dept: document.getElementById('dept').value,
+        section: document.getElementById('section').value,
+        type: document.getElementById('passType').value,
+        departure: document.getElementById('departure').value,
+        returning: document.getElementById('returning').value,
+        reason: document.getElementById('reason').value,
+        status: 'Pending'
+      };
+      requests.push(req);
+      localStorage.setItem('requests', JSON.stringify(requests));
+      alert('Request submitted successfully!');
+      requestForm.reset();
+    });
+
+    function loadRequests() {
+      const tbody = document.querySelector('#requestsTable tbody');
+      tbody.innerHTML = '';
+      requests.forEach((req, index) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${req.name}</td>
+          <td>${req.dept}</td>
+          <td>${req.type}</td>
+          <td>${req.departure}</td>
+          <td>${req.returning}</td>
+          <td>${req.reason}</td>
+          <td class="${req.status==='Approved'?'status-approved':req.status==='Declined'?'status-declined':''}">${req.status}</td>
+          <td>
+            <button onclick="updateStatus(${index}, 'Approved')">Approve</button>
+            <button onclick="updateStatus(${index}, 'Declined')">Decline</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function updateStatus(index, status) {
+      requests[index].status = status;
+      localStorage.setItem('requests', JSON.stringify(requests));
+      loadRequests();
+    }
+  </script>
+</body>
+</html>
